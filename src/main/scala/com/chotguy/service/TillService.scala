@@ -21,11 +21,20 @@ class TillService(input: Array[String]) extends ProductService {
   }
 
   /**
-   * Calculates basket total
+   * Groups basket by the products and returns a map containing products as keys and items qty as the value
    */
-  lazy val total = basket.foldLeft(0.0) {
-    (total: Double, product: ProductItem) =>
-      total + product.price
+  private lazy val groupedByProducts = basket.foldLeft(Map.empty[ProductItem, Int]) {
+    (products: Map[ProductItem, Int], product: ProductItem) =>
+      products + (product -> (1 + products.getOrElse(product, 0)))
+  }
+
+  /**
+    * Calculates basket total as per products offers
+    */
+  lazy val total = groupedByProducts.foldLeft(0.0) {
+    (total, kv) =>
+      total + (kv._1.price * ((kv._2 % kv._1.offer.getQty) +
+        (kv._2 / kv._1.offer.getQty * kv._1.offer.forPriceOfQty)))
   }
 
   /**
